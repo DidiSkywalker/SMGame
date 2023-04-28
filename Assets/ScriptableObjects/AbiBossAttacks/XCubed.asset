@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0dde493785e54e93911a0f47ea96e8a2, type: 3}
-  m_Name: SinX
+  m_Script: {fileID: 11500000, guid: f7b575d43f3a4fbe932f2095c72ececc, type: 3}
+  m_Name: XCubed
   m_EditorClassIdentifier: 
-  textRepresentation: sin(x)
+  textRepresentation: "x\xB3"
   factor: 1
   additive: 0

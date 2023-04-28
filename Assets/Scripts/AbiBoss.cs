@@ -15,8 +15,16 @@ public class AbiBoss : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            _attackActive = true;
-            currentAttack.Use(gameObject);
+            if (_attackActive)
+            {
+                _attackActive = false;
+                currentAttack.Destroy();
+            }
+            else
+            {
+                _attackActive = true;
+                currentAttack.Use(gameObject);
+            }
         }
     }
 }

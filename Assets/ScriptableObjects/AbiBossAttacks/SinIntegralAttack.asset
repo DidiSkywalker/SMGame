@@ -15,3 +15,5 @@ MonoBehaviour:
   meshMat: {fileID: 2100000, guid: 4a5af97fcb13917468f959e6f2d3ea68, type: 2}
   lineMat: {fileID: 2100000, guid: 4e2c612784b818a4fa3f44c337e62add, type: 2}
   function: {fileID: 11400000, guid: cfe934c1735bc994db6b38d395b4f483, type: 2}
+  meshRadius: 10
+  step: 0.1

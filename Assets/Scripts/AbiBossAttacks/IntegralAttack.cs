@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AbiBossAttacks.Functions;
-using DefaultNamespace;
 using TMPro;
 using UnityEngine;
+using Utils;
 
 namespace AbiBossAttacks
 {
@@ -13,47 +14,40 @@ namespace AbiBossAttacks
         public Material meshMat;
         public Material lineMat;
         public Function function;
+        public float meshRadius;
+        public float step;
 
         private GameObject _gameObject;
         private Mesh _mesh;
         private MeshRenderer _meshRenderer;
-        private LineRenderer _lineRenderer;
+        private LineRenderer _graphLineRenderer;
+        private LineRenderer _yAxisLineRenderer;
+        private TMPBundle _tmpBundle;
 
+        private MeshWrapper _meshWrapper;
+        private long _startedAt;
         private State _state;
 
+        // ReSharper disable Unity.PerformanceAnalysis
         protected override void UseImpl(GameObject boss)
         {
             Debug.Log("Use Integral Attack");
-            var bossPosition = boss.transform.position;
-            InitGameObject(bossPosition + Vector3.forward);
+            _startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            Debug.Log($"started at {_startedAt}");
+            var position = ZLevelHelper.Between(boss.transform.position, ZLevelHelper.Background, ZLevelHelper.Player);
+            InitGameObject(position);
             _state = State.ANNOUNCING;
 
-            var text = new GameObject("Function Announcement Text")
+            _tmpBundle = TMPHelper.CreateTextObject("Function Announcement Text", new TextOptions()
             {
-                transform =
-                {
-                    position = bossPosition
-                }
-            };
-            var tmp = text.AddComponent<TextMeshProUGUI>();
-            text.transform.SetParent(GlobalCanvas.CanvasGameObject.transform, false);
-            tmp.fontSize = 120;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.text = "∫ " + function.textRepresentation;
-            text.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 10000f);
-            text.transform.localScale = new Vector3(1, 1, 1);
-            text.transform.localPosition = new Vector3(0, 400, -10);
-
-            var result = PlotGraph(_gameObject.transform.position + Vector3.back * .1f, 10, .1f, function.Apply);
-            
-            _mesh.vertices = result.Vertices;
-            _mesh.triangles = result.Triangles;
-            
-            _lineRenderer.positionCount = result.Points.Length;
-            _lineRenderer.SetPositions(result.Points);
+                Position = new Vector3(0, 400, ZLevelHelper.Foreground),
+                FontSize = 120,
+                FontStyle = FontStyles.Bold,
+                Text = "∫ " + function.textRepresentation
+            });
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void InitGameObject(Vector3 position)
         {
             _gameObject = new GameObject("IntegralAttack")
@@ -63,24 +57,101 @@ namespace AbiBossAttacks
                     position = position
                 }
             };
-            _lineRenderer = _gameObject.AddComponent<LineRenderer>();
+            _graphLineRenderer = _gameObject.AddComponent<LineRenderer>();
             var meshFilter = _gameObject.AddComponent<MeshFilter>();
             _meshRenderer = _gameObject.AddComponent<MeshRenderer>();
             _mesh = new Mesh();
             meshFilter.mesh = _mesh;
 
-            _lineRenderer.startWidth = 0.1f;
-            _lineRenderer.endWidth = 0.1f;
-            _lineRenderer.numCornerVertices = 3;
+            _graphLineRenderer.startWidth = 0.1f;
+            _graphLineRenderer.endWidth = 0.1f;
+            _graphLineRenderer.numCornerVertices = 3;
         }
 
+        private void DrawAxis()
+        {
+            _yAxisLineRenderer = _gameObject.AddComponent<LineRenderer>();
+            _graphLineRenderer.startWidth = 0.1f;
+            _graphLineRenderer.endWidth = 0.1f;
+
+            var points = new List<Vector3>();
+            for (int i = 0; i < 10; i++)
+            {
+                
+            }
+            
+        }
+
+        // ReSharper disable Unity.PerformanceAnalysis
         public override void Update()
         {
-            _lineRenderer.material = lineMat;
+            _graphLineRenderer.material = lineMat;
             _meshRenderer.material = meshMat;
+            if (_startedAt > 0 && _startedAt + 1000 < DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() )
+            {
+                Debug.Log($"Current time: {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+                _startedAt = -1;
+                DrawGraph();
+            }
+
+            if (_startedAt < 0)
+            {
+                if (_meshWrapper.Points[^1].x < meshRadius && Time.frameCount % 5 == 0)
+                {
+                    DrawGraphSection(_meshWrapper);
+                }
+            }
         }
 
-        private static GraphResult PlotGraph(Vector3 origin, int radius, float step, Func<float, float> function)
+        public override void Destroy()
+        {
+            Destroy(_gameObject);
+            Destroy(_tmpBundle.GameObject);
+        }
+
+        private MeshWrapper DrawGraph()
+        {
+            Debug.Log("DrawGraph");
+            _meshWrapper = new MeshWrapper()
+            {
+                Points = new List<Vector3>(),
+                Vertices = new List<Vector3>(),
+                Triangles = new List<int>()
+            };
+            var x = -meshRadius;
+            var y = function.Apply(x);
+            var localPoint = new Vector3(x, y, 0);
+            _meshWrapper.Vertices.Add(localPoint);
+            _meshWrapper.Vertices.Add(new Vector3(x, -meshRadius, 0));
+            _meshWrapper.Points.Add(localPoint + _gameObject.transform.position + Vector3.back * .1f);
+
+            return _meshWrapper;
+        }
+        
+        private void DrawGraphSection(MeshWrapper meshWrapper)
+        {
+            var x = meshWrapper.Points[^1].x + step;
+            var y = function.Apply(x);
+            var localPoint = new Vector3(x, y, 0);
+            var newVertex = meshWrapper.Vertices.Count;
+            meshWrapper.Vertices.Add(localPoint);
+            meshWrapper.Vertices.Add(new Vector3(x, -meshRadius, 0));
+            meshWrapper.Triangles.AddRange(new []{ newVertex - 2, newVertex, newVertex - 1});
+            meshWrapper.Triangles.AddRange(new []{ newVertex - 1, newVertex, newVertex + 1});
+            meshWrapper.Points.Add(localPoint + _gameObject.transform.position + Vector3.back * .1f);
+            UpdateMeshAndLine(meshWrapper);
+        }
+
+        private void UpdateMeshAndLine(MeshWrapper result)
+        {
+            _mesh.vertices = result.Vertices.ToArray();
+            _mesh.triangles = result.Triangles.ToArray();
+            
+            _graphLineRenderer.positionCount = result.Points.Count;
+            _graphLineRenderer.SetPositions(result.Points.ToArray());
+        }
+
+        private static MeshWrapper PlotGraph(Vector3 origin, int radius, float step, Func<float, float> function)
         {
             var vertices = new List<Vector3>
             {
@@ -120,11 +191,11 @@ namespace AbiBossAttacks
                 points.Add(worldPoint);
             }
 
-            return new GraphResult()
+            return new MeshWrapper()
             {
-                Points = points.ToArray(),
-                Vertices = vertices.ToArray(),
-                Triangles = triangles.ToArray()
+                Points = points,
+                Vertices = vertices,
+                Triangles = triangles
             };
         }
 
@@ -136,10 +207,10 @@ namespace AbiBossAttacks
         DRAWING
     }
     
-    internal struct GraphResult
+    internal struct MeshWrapper
     {
-        public Vector3[] Points;
-        public Vector3[] Vertices;
-        public int[] Triangles;
+        public List<Vector3> Points;
+        public List<Vector3> Vertices;
+        public List<int> Triangles;
     }
 }

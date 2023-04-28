@@ -10,5 +10,6 @@ namespace AbiBossAttacks
         }
         protected abstract void UseImpl(GameObject boss);
         public abstract void Update();
+        public abstract void Destroy();
     }
 }

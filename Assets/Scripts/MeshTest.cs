@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using DefaultNamespace;
 using Unity.VisualScripting;
 using UnityEngine;
-using Vector3 = UnityEngine.Vector3;
+using Utils;
 
 public class MeshTest : MonoBehaviour
 {

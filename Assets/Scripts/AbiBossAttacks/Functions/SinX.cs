@@ -7,7 +7,7 @@ namespace AbiBossAttacks.Functions
     {
         public override float Apply(float x)
         {
-            return Mathf.Sin(x) + 1;
+            return factor * Mathf.Sin(x) + additive;
         }
     }
 }
