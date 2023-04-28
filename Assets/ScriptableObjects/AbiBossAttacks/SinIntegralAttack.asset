@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee28a57220776394ca5129f355036ad5, type: 3}
+  m_Name: SinIntegralAttack
+  m_EditorClassIdentifier: 
+  meshMat: {fileID: 2100000, guid: 4a5af97fcb13917468f959e6f2d3ea68, type: 2}
+  lineMat: {fileID: 2100000, guid: 4e2c612784b818a4fa3f44c337e62add, type: 2}
+  function: {fileID: 11400000, guid: cfe934c1735bc994db6b38d395b4f483, type: 2}
